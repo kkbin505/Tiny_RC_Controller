@@ -1,0 +1,6 @@
+#define SERVO_PIN 4
+#define ESC_PIN 5
+#define HEAD_LED_PIN 12
+#define LEFT_STEERING_LED_PIN 13
+#define RIGHT_STEERING_LED_PIN 14
+#define REVERSE_LED_PIN 15
