@@ -1,0 +1,127 @@
+#include <Arduino.h>
+#include <CrsfSerial.h>
+#include <Servo.h>
+#include "config.h"
+
+#define NUM_OUTPUTS 6
+#define NUM_SERVOS 2
+#define ELRS_ARM_CHANNEL 5
+#define PWM_FREQ_HZ 50
+#define ON_BOARD_LED_PIN 16
+
+// CRSF channel map to output
+constexpr int OUTPUT_MAP[NUM_OUTPUTS] = { 1, 2, 3, 4, 5, 6 };
+constexpr int OUTPUT_FAILSAFE[NUM_OUTPUTS] = { CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_1000 };
+constexpr uint8_t OUTPUT_PINS[NUM_OUTPUTS] = { SERVO_PIN, ESC_PIN, HEAD_LED_PIN,LEFT_STEERING_LED_PIN , RIGHT_STEERING_LED_PIN, REVERSE_LED_PIN }; // GPIOs
+constexpr uint8_t crsfChannelMap[NUM_OUTPUTS] = {1, 2, 3, 4 , 5 ,6};  // CRSF channels to map
+
+Servo my_Servos[NUM_SERVOS]; // Only for GPIO 4 and 5
+int g_OutputsUs[NUM_OUTPUTS] = {0};
+
+static CrsfSerial crsf(Serial);
+
+// 存储每个通道上次切换的时间
+unsigned long blinkTimers[NUM_OUTPUTS] = {0};
+
+// 状态位：记录当前是 HIGH 还是 LOW
+bool blinkStates[NUM_OUTPUTS] = {0};
+
+
+void setPwmOutput(uint8_t ch, int channel_Value) {
+  // Convert microseconds to duty (0-255) for analogWrite
+  int duty = map(channel_Value, CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_2000, 0, 255); // Adjust to match duty range
+  analogWrite(OUTPUT_PINS[ch], duty);
+}
+
+void servoSetup(uint8_t ch) {
+  if (ch < NUM_SERVOS) { 
+    my_Servos[ch].attach(OUTPUT_PINS[ch]);
+  }
+}
+
+void servosOutput(uint8_t ch, int input_Values){
+  int channel_Value = map(input_Values, CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_2000, 1000,2000);
+  my_Servos[ch].writeMicroseconds(channel_Value);
+}
+
+void outputFailsafeValues() {
+  for (uint8_t i = 0; i < NUM_SERVOS; i++) {
+    servosOutput(i,OUTPUT_FAILSAFE[i]);
+  }
+}
+
+void packetChannels() {
+    unsigned long now = millis();
+    int channel_Value = crsf.getChannel(crsfChannelMap[0]);
+    servosOutput(0, channel_Value);
+    channel_Value = crsf.getChannel(crsfChannelMap[1]);
+    servosOutput(1, channel_Value);
+    channel_Value = crsf.getChannel(crsfChannelMap[2]);
+    if (channel_Value > CRSF_CHANNEL_VALUE_MID){
+      //   digitalWrite(OUTPUT_PINS[2],HIGH);
+      // }else{
+      //   digitalWrite(OUTPUT_PINS[2],LOW);
+      // }
+        digitalWrite(ON_BOARD_LED_PIN,HIGH);
+      }else{
+        digitalWrite(ON_BOARD_LED_PIN,LOW);
+      }
+      // channel_Value = crsf.getChannel(crsfChannelMap[3]);
+      // if (channel_Value > CRSF_CHANNEL_VALUE_MID ){
+      //     digitalWrite(OUTPUT_PINS[3], HIGH );
+      // }else{
+      //   // 如果不满足闪烁条件，保持 LOW
+      //   digitalWrite(OUTPUT_PINS[3], LOW);
+      // }
+      // channel_Value = crsf.getChannel(crsfChannelMap[4]);
+      // if (channel_Value < CRSF_CHANNEL_VALUE_MID ){
+      //     digitalWrite(OUTPUT_PINS[4], HIGH);
+      // }else{
+      //   // 如果不满足闪烁条件，保持 LOW
+      //   digitalWrite(OUTPUT_PINS[4], LOW);
+      // }
+      // channel_Value = crsf.getChannel(crsfChannelMap[5]);
+      // if (channel_Value < CRSF_CHANNEL_VALUE_MID ){
+      //   digitalWrite(OUTPUT_PINS[5],HIGH);
+      // }else{
+      //   digitalWrite(OUTPUT_PINS[5],LOW);
+      // }
+}
+
+void crsfLinkUp() {
+  digitalWrite(ON_BOARD_LED_PIN, HIGH);
+}
+
+void crsfLinkDown() {
+  digitalWrite(ON_BOARD_LED_PIN, LOW);
+  outputFailsafeValues();
+}
+
+void setup() {
+  Serial.begin(420000);
+  pinMode(ON_BOARD_LED_PIN, OUTPUT);
+  digitalWrite(ON_BOARD_LED_PIN, LOW);
+
+
+  // Initialize Servo outputs
+  for (int i = 0; i< NUM_SERVOS; i++){
+    servosOutput(i,OUTPUT_FAILSAFE[i]);
+  }
+  // Initialize LED outputs
+  for (int i = NUM_SERVOS ; i < NUM_OUTPUTS; i++){
+    pinMode(OUTPUT_PINS[i],OUTPUT);
+    digitalWrite(OUTPUT_PINS[i], HIGH);
+  }
+
+
+  crsf.onLinkUp = crsfLinkUp;
+  crsf.onLinkDown = crsfLinkDown;
+  crsf.onPacketChannels = packetChannels;
+  crsf.begin();
+}
+
+void loop() {
+  crsf.loop();
+
+
+}

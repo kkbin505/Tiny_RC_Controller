@@ -1,8 +1,7 @@
-#define SERVO_PIN 4
-#define ESC_PIN 5
-#define HEAD_LED_PIN 12
-#define LEFT_STEERING_LED_PIN 13
+#define SERVO_PIN 12
+#define ESC_PIN 13
+#define HEAD_LED_PIN 4
+#define LEFT_STEERING_LED_PIN 5
 #define RIGHT_STEERING_LED_PIN 14
 #define REVERSE_LED_PIN 15
-#define CHANNEL_MARGINE 200
-const unsigned long BLINK_INTERVAL_MS = 300;
+const unsigned long BLINK_INTERVAL_MS = 800;
