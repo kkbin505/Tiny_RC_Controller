@@ -1,5 +1,5 @@
 # ESP01F_LED_Control_Board
- Tiny RC Controlleer is an ESP8285 based control board for micro RC vehicle and flying Wing. It supports CRSF (ExpressLRS) receiver.
+ Tiny RC Controller 是一个基于ESP8285 的解码版，支持双路舵机输出，集成LED灯控，支持大灯，双闪，转向联动，倒车灯联动等混控功能。体积小巧，特别适合1:87静改动项目，支持CRSF协议，可以使用微型CRSF串口接收机.
 
 # 功能特性
 
